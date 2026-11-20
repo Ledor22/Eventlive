@@ -1,0 +1,13 @@
+{
+  "_leggimi": "Elenco delle fonti da cui prendere gli eventi veri. 'ics' = calendari pubblici in formato iCal (.ics). 'ticketmaster' = concerti, teatro e sport (serve la chiave gratuita TICKETMASTER_KEY nei Secrets di GitHub).",
+  "ticketmaster": true,
+  "ics": [
+    {
+      "_esempio": "Copia questo blocco per ogni calendario. 'town' = comune di default se nel luogo dell'evento non si capisce.",
+      "name": "Esempio Pro Loco",
+      "url": "https://SITO-DEL-COMUNE.it/eventi/?ical=1",
+      "town": "Quartu Sant'Elena",
+      "enabled": false
+    }
+  ]
+}
