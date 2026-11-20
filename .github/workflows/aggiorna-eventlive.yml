@@ -1,0 +1,72 @@
+name: Aggiorna e pubblica Eventlive
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    # 03:30 UTC ogni giorno (04:30 in Italia in ora solare; 05:30 in ora legale)
+    - cron: '30 3 * * *'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: eventlive-pages
+  cancel-in-progress: false
+
+jobs:
+  aggiorna-e-pubblica:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Scarica il repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Prepara Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Aggiorna eventi
+        continue-on-error: true
+        env:
+          TICKETMASTER_KEY: ${{ secrets.TICKETMASTER_KEY }}
+        run: python scripts/build_eventi.py
+
+      - name: Aggiorna orari ARST e Trenitalia
+        continue-on-error: true
+        run: python scripts/build_orari.py
+
+      - name: Salva i JSON aggiornati nel repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/eventi.json data/orari.json
+          if git diff --cached --quiet; then
+            echo "Nessun dato cambiato."
+          else
+            git commit -m "Aggiornamento automatico dati Eventlive"
+            git push
+          fi
+
+      - name: Prepara il sito statico
+        run: |
+          mkdir -p _site/data
+          cp index.html _site/index.html
+          cp data/eventi.json data/orari.json _site/data/
+
+      - name: Carica i file del sito
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Pubblica su GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
